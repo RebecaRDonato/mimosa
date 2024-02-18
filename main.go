@@ -8,14 +8,6 @@ import (
 
 func main() {
 	ws := gin.Default()
-	/*ws.GET("/user/:name", func(c *gin.Context) {
-		name := c.Param("name")
-		c.String(http.StatusOK, "Bem-Vindo %s", name)
-	})*/
-	/*ws.GET("/user/:name/contacts", func(c *gin.Context) {
-		name := c.Param("name")
-		c.String(http.StatusOK, "Hello %s", name)
-	})*/
 	ws.GET("/clientes/:id/extrato", getExtrato)
 	ws.POST("/clientes/:id/transacoes", postTransacao)
 	ws.Run() // listen and serve on 0.0.0.0:8080
