@@ -2,9 +2,39 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
+
+type postTransacaoResposta struct {
+	Limite int `json:"limite"`
+	Saldo  int `json:"saldo"`
+}
+
+type postTransacaoRequestBody struct {
+	Valor     int    `json:"valor"`
+	Tipo      string `json:"tipo"`
+	Descricao string `json:"descricao"`
+}
+
+type saldo struct {
+	Total       int    `json:"total"`
+	DataExtrato string `json:"data_extrato"`
+	Limite      int    `json:"limite"`
+}
+
+type ultimaTransacao struct {
+	Valor       int    `json:"valor"`
+	Tipo        string `json:"tipo"`
+	Descricao   string `json:"descricao"`
+	RealizadaEm string `json:"realizada_em"`
+}
+
+type getExtratoResposta struct {
+	Saldo             saldo             `json:"saldo"`
+	UltimasTransacoes []ultimaTransacao `json:"ultimas_transacoes"`
+}
 
 // Primeiro = limite - Segundo = saldo
 var clientes = map[string][]int{
@@ -16,6 +46,15 @@ var clientes = map[string][]int{
 	"7": {10, 0},
 }
 
+var transacoes = map[string][]ultimaTransacao{
+	"1": {},
+	"2": {},
+	"3": {},
+	"4": {},
+	"5": {},
+	"7": {},
+}
+
 func main() {
 	ws := gin.Default()
 	ws.GET("/clientes/:id/extrato", getExtrato)
@@ -24,17 +63,6 @@ func main() {
 }
 
 func postTransacao(ctx *gin.Context) {
-	type postTransacaoResposta struct {
-		Limite int `json:"limite"`
-		Saldo  int `json:"saldo"`
-	}
-
-	type postTransacaoRequestBody struct {
-		Valor     int    `json:"valor"`
-		Tipo      string `json:"tipo"`
-		Descricao string `json:"descricao"`
-	}
-
 	id := ctx.Param("id")
 	cliente, ok := clientes[id]
 
@@ -78,46 +106,33 @@ func postTransacao(ctx *gin.Context) {
 		Saldo:  cliente[1],
 	}
 
-	ctx.JSON(http.StatusOK, resposta)
+	transacoes[id] = append(transacoes[id], ultimaTransacao{
+		Valor:       requestBody.Valor,
+		Tipo:        requestBody.Tipo,
+		Descricao:   requestBody.Descricao,
+		RealizadaEm: time.Now().UTC().Format(time.RFC3339Nano),
+	})
 
+	ctx.JSON(http.StatusOK, resposta)
 }
 
 func getExtrato(ctx *gin.Context) {
-	type saldo struct {
-		Total       int    `json:"total"`
-		DataExtrato string `json:"data_extrato"`
-		Limite      int    `json:"limite"`
+	id := ctx.Param("id")
+	cliente, ok := clientes[id]
+
+	if ok == false {
+		ctx.Status(404)
+		return
 	}
-	type ultimaTransacao struct {
-		Valor       int    `json:"valor"`
-		Tipo        string `json:"tipo"`
-		Descricao   string `json:"descricao"`
-		RealizadaEm string `json:"realizada_em"`
-	}
-	type getExtratoResposta struct {
-		Saldo             saldo             `json:"saldo"`
-		UltimasTransacoes []ultimaTransacao `json:"ultimas_transacoes"`
-	}
+
 	resposta := getExtratoResposta{
 		Saldo: saldo{
-			Total:       -9098,
-			DataExtrato: "2024-01-17T02:34:41.217753Z",
-			Limite:      100000,
+			Total:       cliente[1],
+			DataExtrato: time.Now().UTC().Format(time.RFC3339Nano),
+			Limite:      cliente[0],
 		},
-		UltimasTransacoes: []ultimaTransacao{
-			{
-				Valor:       10,
-				Tipo:        "c",
-				Descricao:   "descricao",
-				RealizadaEm: "2024-01-17T02:34:38.543030Z",
-			},
-			{
-				Valor:       90000,
-				Tipo:        "d",
-				Descricao:   "descricao",
-				RealizadaEm: "2024-01-17T02:34:38.543030Z",
-			},
-		},
+		UltimasTransacoes: transacoes[id],
 	}
+
 	ctx.JSON(http.StatusOK, resposta)
 }
