@@ -1,0 +1,24 @@
+version: '3.0'
+
+services:
+
+  rinha-db:
+    image: mariadb:11.2.3
+    container_name: rinha-db
+    restart: always
+    network_mode: host
+    ports:
+      - "3306:3306"
+    environment:
+      - MARIADB_DATABASE=rinha-db
+      - MARIADB_USER=admin
+      - MARIADB_PASSWORD=qwerty
+      - MARIADB_ROOT_PASSWORD=qwerty
+    #volumes:
+      #- ./configs/mysql.conf:/etc/my.cnf
+      #- ./scripts/init_mysql.sql:/docker-entrypoint-initdb.d/init.sql
+    deploy:
+      resources:
+        limits:
+          cpus: '1.05'
+          memory: 350M 

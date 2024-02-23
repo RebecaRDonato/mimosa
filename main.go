@@ -79,6 +79,11 @@ func postTransacao(ctx *gin.Context) {
 		return
 	}
 
+	if requestBody.Valor < 0 {
+		ctx.Status(422)
+		return
+	}
+
 	if requestBody.Tipo != "c" && requestBody.Tipo != "d" {
 		ctx.Status(422)
 		return
